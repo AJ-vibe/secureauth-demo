@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: secureauth-demo
+    runtime: python
+    buildCommand: echo "No build step — stdlib only"
+    startCommand: python3 server.py
+    envVars:
+      - key: PORT
+        value: 10000        # Render's default web port; server.py reads $PORT automatically

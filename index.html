@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureAuth Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE 1 — LOGIN
+  ══════════════════════════════════════════════════════════════════ -->
+  <div id="login-page" class="page active">
+
+    <!-- Slim inbound-trigger notification (shown when poll detects pending) -->
+    <div id="login-notif" class="login-notif hidden">
+      <div class="login-notif-inner">
+        <span class="login-notif-dot"></span>
+        <span class="login-notif-icon">IVA</span>
+        <span class="login-notif-text">
+          <strong>Authentication request received from IVA</strong> — sign in to review it.
+        </span>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <div class="login-header">
+        <div class="brand-icon">🔐</div>
+        <h1>SecureAuth</h1>
+        <p>Sign in to manage your authentication requests</p>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
+        </div>
+        <div id="login-error" class="error-msg hidden">Please enter your email and password.</div>
+        <button type="submit" class="btn-primary" id="login-btn">
+          <span class="btn-label">Sign In</span>
+          <span class="btn-spinner hidden">&#8635;</span>
+        </button>
+      </form>
+
+      <p class="login-hint">Demo: any email &amp; password will sign you in</p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE 2 — DASHBOARD  (shown after login; approve/deny here)
+  ══════════════════════════════════════════════════════════════════ -->
+  <div id="dashboard-page" class="page">
+
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="header-brand">🔐 SecureAuth</div>
+        <div class="header-user">
+          <span id="dash-user-greeting"></span>
+          <button id="dash-logout-btn" class="btn-text-link">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="dash-main">
+      <div class="dash-inner">
+
+        <!-- ── Auth Request Card (prominent, shown when pending) ── -->
+        <div id="auth-request-card" class="auth-request-card hidden">
+          <div class="arc-alert-bar">
+            <span class="arc-alert-dot"></span>
+            Authentication Request Pending
+          </div>
+          <div class="arc-body">
+            <div class="arc-left">
+              <div class="iva-logo-badge">IVA</div>
+              <div class="arc-meta">
+                <h2 class="arc-title">Authentication Request from IVA</h2>
+                <p class="arc-subtitle" id="arc-message">
+                  IVA is requesting your authentication approval.
+                </p>
+                <div class="arc-details">
+                  <span class="arc-detail-chip">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 3.5v3l1.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span id="arc-time">—</span>
+                  </span>
+                  <span class="arc-detail-chip">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="3" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 3V2a2 2 0 1 1 4 0v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    Req&nbsp;<span id="arc-id" class="arc-id">—</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="arc-actions">
+              <button id="dash-deny-btn"    class="arc-btn-deny">✕&nbsp; Deny</button>
+              <button id="dash-approve-btn" class="arc-btn-approve">✓&nbsp; Approve</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── No pending state (default view — hidden when a request arrives) ── -->
+        <div id="no-request-card" class="no-request-card">
+          <span class="no-req-icon">🔔</span>
+          <p>No pending authentication requests.</p>
+          <p class="no-req-sub">Waiting for an incoming request from IVA…</p>
+        </div>
+
+        <!-- ── Dashboard widgets ─────────────────────────────────── -->
+        <section class="dash-section">
+          <h3 class="dash-section-title">Overview</h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-blue">🔑</div>
+              <div class="stat-info">
+                <div class="stat-value">24</div>
+                <div class="stat-label">Auth Requests Today</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-green">✅</div>
+              <div class="stat-info">
+                <div class="stat-value">21</div>
+                <div class="stat-label">Approved</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-red">🚫</div>
+              <div class="stat-info">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Denied</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-amber">⏱</div>
+              <div class="stat-info">
+                <div class="stat-value">1.2s</div>
+                <div class="stat-label">Avg. Response Time</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dash-section">
+          <h3 class="dash-section-title">Recent Activity</h3>
+          <div class="activity-table">
+            <div class="at-header">
+              <span>Requester</span><span>Request ID</span><span>Time</span><span>Status</span>
+            </div>
+            <div class="at-row">
+              <span>IVA</span><span class="mono">#A3F8C1</span><span>2 min ago</span>
+              <span><span class="badge badge-green">Approved</span></span>
+            </div>
+            <div class="at-row">
+              <span>IVA</span><span class="mono">#B92DE0</span><span>18 min ago</span>
+              <span><span class="badge badge-green">Approved</span></span>
+            </div>
+            <div class="at-row">
+              <span>IVA</span><span class="mono">#D14FA9</span><span>1 hr ago</span>
+              <span><span class="badge badge-red">Denied</span></span>
+            </div>
+            <div class="at-row">
+              <span>IVA</span><span class="mono">#E70023</span><span>3 hr ago</span>
+              <span><span class="badge badge-green">Approved</span></span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE 3 — HOME / PRODUCTS  (shown after approval)
+  ══════════════════════════════════════════════════════════════════ -->
+  <div id="home-page" class="page">
+
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="header-brand">🔐 SecureAuth</div>
+        <div class="header-user">
+          <span id="home-user-greeting"></span>
+          <button id="home-logout-btn" class="btn-text-link">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="success-banner" class="success-banner hidden">
+      <div class="success-inner">
+        <div class="success-icon">✓</div>
+        <div class="success-text">
+          <strong>Authentication Approved</strong>
+          <span>You've successfully approved the request from IVA. The result has been sent.</span>
+        </div>
+        <button id="close-success" class="success-close" aria-label="Dismiss">&#x2715;</button>
+      </div>
+    </div>
+
+    <main class="main">
+      <div class="main-inner">
+        <section class="hero">
+          <h2>Welcome to Your Dashboard</h2>
+          <p>Authentication complete. Explore our featured products below.</p>
+        </section>
+
+        <section class="products-section">
+          <h3>Featured Products</h3>
+          <div class="products-grid">
+
+            <div class="product-card">
+              <div class="product-image img-purple">
+                <span class="product-emoji">🎧</span>
+              </div>
+              <div class="product-info">
+                <h4>Wireless Pro Headphones</h4>
+                <p class="product-desc">Premium noise-cancelling audio with 30-hour battery life.</p>
+                <div class="product-footer">
+                  <span class="product-price">$149.99</span>
+                  <button class="btn-cart">Add to Cart</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-image img-teal">
+                <span class="product-emoji">⌚</span>
+              </div>
+              <div class="product-info">
+                <h4>SmartWatch Series X</h4>
+                <p class="product-desc">Health tracking, GPS, and 7-day battery in a sleek design.</p>
+                <div class="product-footer">
+                  <span class="product-price">$299.99</span>
+                  <button class="btn-cart">Add to Cart</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-image img-amber">
+                <span class="product-emoji">💻</span>
+              </div>
+              <div class="product-info">
+                <h4>Ergonomic Laptop Stand</h4>
+                <p class="product-desc">Adjustable aluminium stand for better posture and airflow.</p>
+                <div class="product-footer">
+                  <span class="product-price">$79.99</span>
+                  <button class="btn-cart">Add to Cart</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

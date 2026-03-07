@@ -1,0 +1,2 @@
+# No third-party dependencies — server.py uses Python stdlib only.
+# Add packages here if you introduce Flask, FastAPI, etc. later.
