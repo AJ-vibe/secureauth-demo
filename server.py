@@ -86,8 +86,42 @@ def _load_or_create_vapid_keys():
 
 
 # ── Push subscription store ───────────────────────────────────────────
+# Subscriptions are kept in memory AND persisted to SUBS_FILE on disk so
+# they survive Render sleep/wake cycles.  Without disk persistence the
+# in-memory list is wiped every time the free-tier server spins down,
+# meaning no push can be sent until the user opens the app again.
+SUBS_FILE  = os.path.join(os.path.dirname(__file__), ".push_subscriptions.json")
 _subs      = []          # list of subscription dicts from the browser
 _subs_lock = threading.Lock()
+
+
+def _load_subs():
+    """Load push subscriptions from disk (called once at startup)."""
+    global _subs
+    if os.path.exists(SUBS_FILE):
+        try:
+            with open(SUBS_FILE) as f:
+                loaded = json.load(f)
+            # Basic validation: each entry must have endpoint + keys
+            _subs = [s for s in loaded
+                     if s.get("endpoint") and s.get("keys", {}).get("p256dh")]
+            print(f"[push] Loaded {len(_subs)} subscription(s) from disk.")
+        except Exception as exc:
+            print(f"[push] Could not load subscriptions from disk: {exc}")
+            _subs = []
+    else:
+        _subs = []
+
+
+def _save_subs():
+    """Persist current subscriptions to disk (called after every change)."""
+    try:
+        with _subs_lock:
+            snapshot = list(_subs)
+        with open(SUBS_FILE, "w") as f:
+            json.dump(snapshot, f)
+    except Exception as exc:
+        print(f"[push] Could not save subscriptions to disk: {exc}")
 
 
 def _send_push_to_all(payload: dict):
@@ -127,6 +161,7 @@ def _send_push_to_all(payload: dict):
                     _subs.remove(s)
                 except ValueError:
                     pass
+        _save_subs()   # persist the pruned list
 
 
 # ── Shared auth-request state ─────────────────────────────────────────
@@ -327,6 +362,7 @@ class Handler(BaseHTTPRequestHandler):
                     _subs.remove(s)
                 _subs.append({"endpoint": endpoint, "keys": keys})
                 count = len(_subs)
+            _save_subs()   # persist to disk so subscriptions survive server restarts
             print(f"[push] Subscription stored. Total: {count}")
             self._json(200, {"status": "ok", "subscriptions": count})
 
@@ -337,6 +373,7 @@ class Handler(BaseHTTPRequestHandler):
                 before = len(_subs)
                 _subs[:] = [s for s in _subs if s["endpoint"] != endpoint]
                 removed  = before - len(_subs)
+            _save_subs()   # persist the updated list
             print(f"[push] Unsubscribed {removed} subscription(s).")
             self._json(200, {"status": "ok", "removed": removed})
 
@@ -348,6 +385,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     _reset_state()
     _load_or_create_vapid_keys()
+    _load_subs()          # restore subscriptions that were persisted before last restart
     server = HTTPServer(("", PORT), Handler)
     print(f"""
 ╔══════════════════════════════════════════════════════════╗

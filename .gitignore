@@ -22,5 +22,8 @@ Thumbs.db
 # VAPID keys — contain private key, never commit
 .vapid_keys.json
 
+# Push subscriptions — device-specific data, never commit
+.push_subscriptions.json
+
 # Claude
 .claude/settings.local.json
