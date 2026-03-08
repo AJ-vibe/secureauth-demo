@@ -84,6 +84,19 @@
       </div>
     </header>
 
+    <!-- Notification enable banner (hidden until needed) -->
+    <div id="notif-enable-banner" class="notif-enable-banner hidden">
+      <div class="notif-enable-inner">
+        <span class="notif-enable-icon">🔔</span>
+        <div class="notif-enable-text">
+          <strong>Enable push notifications</strong>
+          <span>Get alerted on this device when IVA sends an authentication request — even when the app is closed.</span>
+        </div>
+        <button id="notif-enable-btn" class="btn-notif-enable">Enable Notifications</button>
+        <button class="btn-notif-dismiss" onclick="this.closest('.notif-enable-banner').classList.add('hidden')" aria-label="Dismiss">✕</button>
+      </div>
+    </div>
+
     <main class="dash-main">
       <div class="dash-inner">
 

@@ -14,8 +14,12 @@ const CONFIG = {
   responseEndpoint: '/api/auth/response',
 
   // Outbound callback: server forwards result here (configured in server.py)
-  // Frontend shows this URL in logs for transparency
   outboundCallback: 'https://placeholder.api/iva/auth/callback',  // TODO
+
+  // Web Push endpoints
+  vapidPublicKeyEndpoint: '/api/push/vapid-public-key',
+  pushSubscribeEndpoint:  '/api/push/subscribe',
+  pushUnsubEndpoint:      '/api/push/unsubscribe',
 
   pollMs: 2000,
 };
@@ -184,6 +188,15 @@ $loginForm.addEventListener('submit', async e => {
 
   // Force-refresh dashboard auth card immediately after landing
   await pollAuthState();
+
+  // Show notification enable banner if permission not yet granted
+  refreshNotifBanner();
+
+  // Wire up the enable button (safe to call multiple times)
+  const $enableBtn = document.getElementById('notif-enable-btn');
+  if ($enableBtn) {
+    $enableBtn.onclick = enableNotifications;
+  }
 });
 
 /* ══════════════════════════════════════════════════════════════════
@@ -295,6 +308,94 @@ document.querySelectorAll('.btn-cart').forEach(btn => {
     setTimeout(() => { this.textContent = orig; this.style.background = ''; }, 1800);
   });
 });
+
+/* ══════════════════════════════════════════════════════════════════
+   WEB PUSH — permission, subscription, VAPID
+══════════════════════════════════════════════════════════════════ */
+
+/** Convert a base64url string to a Uint8Array (needed by pushManager.subscribe) */
+function urlB64ToUint8Array(b64url) {
+  const pad    = '='.repeat((4 - (b64url.length % 4)) % 4);
+  const base64 = (b64url + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const raw    = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+/** Fetch the VAPID public key from the server */
+async function getVapidPublicKey() {
+  const res  = await fetch(CONFIG.vapidPublicKeyEndpoint);
+  const data = await res.json();
+  return data.publicKey;
+}
+
+/** Subscribe this device to Web Push and register it with the server */
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.warn('[push] Web Push not supported in this browser.');
+    return null;
+  }
+
+  const reg = await navigator.serviceWorker.ready;
+
+  // Check if already subscribed
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    const vapidKey = await getVapidPublicKey();
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: urlB64ToUint8Array(vapidKey),
+    });
+  }
+
+  // Send subscription to server
+  await fetch(CONFIG.pushSubscribeEndpoint, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(sub.toJSON()),
+  });
+
+  console.log('[push] Subscribed and registered with server.');
+  return sub;
+}
+
+/** Request notification permission then subscribe */
+async function enableNotifications() {
+  const $banner = document.getElementById('notif-enable-banner');
+  const $btn    = document.getElementById('notif-enable-btn');
+
+  if ($btn) { $btn.disabled = true; $btn.textContent = 'Enabling…'; }
+
+  const permission = await Notification.requestPermission();
+
+  if (permission === 'granted') {
+    await subscribeToPush();
+    if ($banner) $banner.classList.add('hidden');
+    console.log('[push] Notifications enabled.');
+  } else {
+    if ($btn) { $btn.disabled = false; $btn.textContent = 'Enable Notifications'; }
+    console.warn('[push] Notification permission denied.');
+  }
+}
+
+/** Show or hide the notification enable banner based on current permission */
+async function refreshNotifBanner() {
+  const $banner = document.getElementById('notif-enable-banner');
+  if (!$banner) return;
+  if (!('Notification' in window) || !('PushManager' in window)) {
+    $banner.classList.add('hidden');   // browser doesn't support push
+    return;
+  }
+
+  if (Notification.permission === 'granted') {
+    $banner.classList.add('hidden');
+    // Make sure we have an active subscription registered
+    subscribeToPush().catch(() => {});
+  } else if (Notification.permission === 'denied') {
+    $banner.classList.add('hidden');   // can't ask again — don't nag
+  } else {
+    $banner.classList.remove('hidden'); // 'default' → invite the user
+  }
+}
 
 /* ══════════════════════════════════════════════════════════════════
    BOOT

@@ -1,2 +1,2 @@
-# No third-party dependencies — server.py uses Python stdlib only.
-# Add packages here if you introduce Flask, FastAPI, etc. later.
+# Web Push notifications (VAPID + RFC 8291 payload encryption)
+pywebpush>=2.0.0

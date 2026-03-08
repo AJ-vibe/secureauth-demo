@@ -19,5 +19,8 @@ env/
 .LSOverride
 Thumbs.db
 
+# VAPID keys — contain private key, never commit
+.vapid_keys.json
+
 # Claude
 .claude/settings.local.json

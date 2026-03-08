@@ -170,6 +170,40 @@ html, body {
 }
 .btn-text-link:hover { background: var(--primary-light); }
 
+/* ── Notification enable banner ──────────────────────────────────── */
+.notif-enable-banner {
+  background: var(--primary-light);
+  border-bottom: 2px solid var(--primary);
+}
+.notif-enable-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+.notif-enable-icon { font-size: 22px; flex-shrink: 0; }
+.notif-enable-text { flex: 1; min-width: 200px; }
+.notif-enable-text strong { display: block; font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+.notif-enable-text span   { font-size: 13px; color: var(--text-2); }
+.btn-notif-enable {
+  padding: 9px 18px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background var(--ease);
+}
+.btn-notif-enable:hover    { background: var(--primary-h); }
+.btn-notif-enable:disabled { opacity: .6; cursor: not-allowed; }
+.btn-notif-dismiss {
+  background: none; border: none; font-size: 16px;
+  color: var(--text-2); cursor: pointer; padding: 4px 8px;
+  border-radius: 5px; line-height: 1; flex-shrink: 0;
+  transition: background var(--ease);
+}
+.btn-notif-dismiss:hover { background: rgba(0,0,0,.06); }
+
 /* ═══════════════════════════════════════════════════════════════════
    DASHBOARD PAGE
 ═══════════════════════════════════════════════════════════════════ */

@@ -2,8 +2,15 @@ services:
   - type: web
     name: secureauth-demo
     runtime: python
-    buildCommand: echo "No build step — stdlib only"
+    buildCommand: pip install -r requirements.txt
     startCommand: python3 server.py
     envVars:
       - key: PORT
-        value: 10000        # Render's default web port; server.py reads $PORT automatically
+        value: 10000
+      # Optional: pin VAPID keys across deploys so existing subscriptions survive restarts.
+      # Generate once locally with: python3 -c "from make_icons import *" (see make_vapid_keys.py)
+      # Then paste the output values here.
+      - key: VAPID_PRIVATE_KEY
+        value: ""   # TODO: paste generated private key (PEM, single line)
+      - key: VAPID_PUBLIC_KEY
+        value: ""   # TODO: paste generated public key (base64url)
