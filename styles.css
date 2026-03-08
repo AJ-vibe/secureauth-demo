@@ -148,6 +148,23 @@ html, body {
   color: var(--text-2); background: var(--bg); border-radius: 7px; padding: 8px 12px;
 }
 
+/* ── Login-page push notification prompt (standalone / home-screen mode) ── */
+.login-push-prompt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--primary-light);
+  border: 1.5px solid var(--primary);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.login-push-icon { font-size: 20px; flex-shrink: 0; }
+.login-push-text { flex: 1; min-width: 140px; }
+.login-push-text strong { display: block; font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+.login-push-text span   { font-size: 12px; color: var(--text-2); line-height: 1.4; }
+
 /* ═══════════════════════════════════════════════════════════════════
    SHARED HEADER
 ═══════════════════════════════════════════════════════════════════ */

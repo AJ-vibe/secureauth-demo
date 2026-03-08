@@ -25,6 +25,16 @@ const CONFIG = {
 };
 
 /* ══════════════════════════════════════════════════════════════════
+   STANDALONE DETECTION
+   On iOS, push subscriptions are context-specific: a subscription
+   made in Safari browser won't deliver background push to the home
+   screen PWA, and vice-versa.  We detect which context we're in so
+   we can auto-resubscribe and guide the user appropriately.
+══════════════════════════════════════════════════════════════════ */
+const isStandalone = window.navigator.standalone === true ||
+                     window.matchMedia('(display-mode: standalone)').matches;
+
+/* ══════════════════════════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════════════════════════ */
 let appState = {
@@ -190,13 +200,8 @@ $loginForm.addEventListener('submit', async e => {
   await pollAuthState();
 
   // Show notification enable banner if permission not yet granted
+  // (button wiring is handled inside refreshNotifBanner)
   refreshNotifBanner();
-
-  // Wire up the enable button (safe to call multiple times)
-  const $enableBtn = document.getElementById('notif-enable-btn');
-  if ($enableBtn) {
-    $enableBtn.onclick = enableNotifications;
-  }
 });
 
 /* ══════════════════════════════════════════════════════════════════
@@ -358,26 +363,38 @@ async function subscribeToPush() {
   return sub;
 }
 
-/** Request notification permission then subscribe */
+/** Request notification permission then subscribe.
+ *  Works from any page — disables/re-enables all .btn-notif-enable
+ *  buttons and hides all notification banners on success. */
 async function enableNotifications() {
-  const $banner = document.getElementById('notif-enable-banner');
-  const $btn    = document.getElementById('notif-enable-btn');
-
-  if ($btn) { $btn.disabled = true; $btn.textContent = 'Enabling…'; }
+  // Disable every enable button across all pages while we're asking
+  document.querySelectorAll('.btn-notif-enable').forEach(b => {
+    b.disabled = true; b.textContent = 'Enabling…';
+  });
 
   const permission = await Notification.requestPermission();
 
   if (permission === 'granted') {
     await subscribeToPush();
-    if ($banner) $banner.classList.add('hidden');
+    // Hide every notification prompt/banner (login + dashboard)
+    document.querySelectorAll('.notif-enable-banner, #login-push-prompt')
+            .forEach(el => el.classList.add('hidden'));
     console.log('[push] Notifications enabled.');
   } else {
-    if ($btn) { $btn.disabled = false; $btn.textContent = 'Enable Notifications'; }
-    console.warn('[push] Notification permission denied.');
+    // Re-enable buttons so the user can try again (unless permanently denied)
+    document.querySelectorAll('.btn-notif-enable').forEach(b => {
+      b.disabled = false; b.textContent = 'Enable Notifications';
+    });
+    if (permission === 'denied') {
+      // Can't ask again — hide everything silently
+      document.querySelectorAll('.notif-enable-banner, #login-push-prompt')
+              .forEach(el => el.classList.add('hidden'));
+    }
+    console.warn('[push] Notification permission:', permission);
   }
 }
 
-/** Show or hide the notification enable banner based on current permission */
+/** Show or hide the dashboard notification-enable banner. */
 async function refreshNotifBanner() {
   const $banner = document.getElementById('notif-enable-banner');
   if (!$banner) return;
@@ -385,6 +402,10 @@ async function refreshNotifBanner() {
     $banner.classList.add('hidden');   // browser doesn't support push
     return;
   }
+
+  // Wire up the dashboard enable button
+  const $btn = document.getElementById('notif-enable-btn');
+  if ($btn) $btn.onclick = enableNotifications;
 
   if (Notification.permission === 'granted') {
     $banner.classList.add('hidden');
@@ -397,7 +418,50 @@ async function refreshNotifBanner() {
   }
 }
 
+/** Show or hide the login-page push notification prompt.
+ *  Only shown when running as an installed home-screen app (standalone)
+ *  and permission has not been decided yet.  This is critical for iOS:
+ *  the user must grant permission inside the standalone PWA context so
+ *  the subscription is tied to the home-screen app, not Safari. */
+function refreshLoginNotifPrompt() {
+  const $prompt = document.getElementById('login-push-prompt');
+  if (!$prompt) return;
+  if (!('Notification' in window) || !('PushManager' in window)) {
+    $prompt.classList.add('hidden');
+    return;
+  }
+
+  const $btn = document.getElementById('login-push-btn');
+  if ($btn) $btn.onclick = enableNotifications;
+
+  if (isStandalone && Notification.permission === 'default') {
+    $prompt.classList.remove('hidden');
+  } else {
+    $prompt.classList.add('hidden');
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════
    BOOT
 ══════════════════════════════════════════════════════════════════ */
 startPolling();
+
+// Show push prompt on the login page if we're in standalone mode
+// and the user hasn't decided on notifications yet.
+refreshLoginNotifPrompt();
+
+// ── Auto-resubscribe on every load ───────────────────────────────
+// THIS IS THE KEY iOS FIX:
+// On iOS, a push subscription created in Safari browser is a different
+// subscription than one created inside the standalone home-screen app.
+// The server stores whichever endpoint was last registered, so if you
+// subscribed in Safari, the home-screen app never receives background
+// pushes.  By calling subscribeToPush() on every boot when permission
+// is already granted, we ensure the current context's endpoint is
+// always the one the server will deliver to.
+if ('Notification' in window && 'PushManager' in window &&
+    Notification.permission === 'granted') {
+  navigator.serviceWorker.ready.then(() => {
+    subscribeToPush().catch(() => {});
+  });
+}

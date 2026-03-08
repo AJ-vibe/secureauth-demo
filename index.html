@@ -65,6 +65,18 @@
       </form>
 
       <p class="login-hint">Demo: any email &amp; password will sign you in</p>
+
+      <!-- Push notification prompt — only appears in standalone (home-screen) mode
+           when permission has not yet been granted.  Granting here ties the
+           subscription to the PWA context so background push works on iOS. -->
+      <div id="login-push-prompt" class="login-push-prompt hidden">
+        <span class="login-push-icon">🔔</span>
+        <div class="login-push-text">
+          <strong>Enable push notifications</strong>
+          <span>Get alerted when IVA sends a request — even when the app is closed.</span>
+        </div>
+        <button id="login-push-btn" class="btn-notif-enable">Enable</button>
+      </div>
     </div>
   </div>
 
