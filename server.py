@@ -146,13 +146,24 @@ def _send_push_to_all(payload: dict):
             )
             print(f"[push] Sent to {sub['endpoint'][:60]}…")
         except Exception as exc:
-            # 404 / 410 means the subscription is no longer valid → remove it
-            status = getattr(getattr(exc, "response", None), "status_code", None)
+            # 404 / 410 → subscription no longer valid, remove it
+            # 401 / 403 → VAPID key mismatch (subscription created with different keys)
+            resp   = getattr(exc, "response", None)
+            status = getattr(resp, "status_code", None)
+            body   = ""
+            try:
+                body = resp.text[:200] if resp else ""
+            except Exception:
+                pass
             if status in (404, 410):
                 stale.append(sub)
                 print(f"[push] Stale subscription removed (HTTP {status}).")
+            elif status in (401, 403):
+                stale.append(sub)
+                print(f"[push] VAPID key mismatch (HTTP {status}) — subscription removed. "
+                      f"Ensure VAPID env vars are set in Render dashboard. Body: {body}")
             else:
-                print(f"[push] Send error: {exc}")
+                print(f"[push] Send error HTTP {status}: {exc} | body: {body}")
 
     if stale:
         with _subs_lock:
@@ -271,6 +282,18 @@ class Handler(BaseHTTPRequestHandler):
 
         elif self.path == "/api/push/vapid-public-key":
             self._json(200, {"publicKey": _vapid_public_b64})
+
+        elif self.path == "/api/push/debug":
+            # Debug endpoint — shows server push state without exposing secrets
+            with _subs_lock:
+                count = len(_subs)
+                endpoints = [s["endpoint"][:50] + "…" for s in _subs]
+            self._json(200, {
+                "subscriptions_in_memory": count,
+                "subs_file_exists": os.path.exists(SUBS_FILE),
+                "vapid_public_key": _vapid_public_b64,
+                "endpoints_preview": endpoints,
+            })
 
         else:
             self._serve_file()
