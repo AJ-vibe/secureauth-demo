@@ -2,8 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SecureAuth Demo</title>
+  <!-- Viewport: respect iPhone notch / Dynamic Island -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>SecureAuth</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- iOS PWA — full-screen, status bar, splash -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SecureAuth" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+  <!-- Theme colour (Android + Safari tab bar) -->
+  <meta name="theme-color" content="#4F46E5" />
+
+  <!-- Prevent phone-number auto-detection on iOS -->
+  <meta name="format-detection" content="telephone=no" />
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -261,5 +278,11 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+    // Register service worker (enables PWA install prompt + offline shell)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>

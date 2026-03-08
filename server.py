@@ -104,6 +104,9 @@ class Handler(BaseHTTPRequestHandler):
             ".json": "application/json",
             ".ico":  "image/x-icon",
             ".png":  "image/png",
+            ".svg":  "image/svg+xml",
+            ".webp": "image/webp",
+            ".woff2":"font/woff2",
         }
         ext = os.path.splitext(file_path)[1]
         with open(file_path, "rb") as f:
