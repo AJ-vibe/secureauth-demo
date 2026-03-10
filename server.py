@@ -19,6 +19,12 @@ For Render: set VAPID_PRIVATE_KEY + VAPID_PUBLIC_KEY env vars so keys
 survive deploys (see render.yaml).
 """
 
+import sys
+# Render containers buffer stdout even with -u / PYTHONUNBUFFERED.
+# Redirect everything to stderr which is always line-buffered and
+# appears immediately in the Render log viewer.
+sys.stdout = sys.stderr
+
 import json
 import os
 import threading
