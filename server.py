@@ -147,7 +147,7 @@ def _send_push_to_all(payload: dict):
             webpush(
                 subscription_info=sub,
                 data=json.dumps(payload),
-                vapid_private_key=_vapid_private_pem,
+                vapid_private_key=_vapid_private_pem.encode("utf-8"),
                 vapid_claims={"sub": VAPID_CONTACT},
             )
             print(f"[push] Sent to {sub['endpoint'][:60]}…")
